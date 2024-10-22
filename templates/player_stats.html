@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NBA Player Stats Search</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold mb-8 text-center text-gray-100">NBA Player Stats Search</h1>
+
+        <!-- Flexbox layout: Search form + Average stats section -->
+        <div class="flex justify-between items-start mb-8">
+            <!-- Search form -->
+            <div class="bg-gray-800 p-6 rounded-lg shadow-md w-1/4">
+                <form action="/search_player" method="POST" class="flex flex-col space-y-4">
+                    <div>
+                        <label for="player_name" class="block text-lg font-semibold text-gray-100">Player Name:</label>
+                        <input type="text" id="player_name" name="player_name" oninput="getSuggestions()" value="{{ player_name }}" autocomplete="off" required class="border border-gray-600 bg-gray-700 rounded p-2 w-full text-gray-100">
+                        <div id="player_name_suggestions" class="suggestions"></div>
+                    </div>
+
+                    <div>
+                        <label for="season" class="block text-lg font-semibold text-gray-100">Select Season:</label>
+                        <select id="season" name="season" class="border border-gray-600 bg-gray-700 rounded p-2 w-full text-gray-100">
+                            {% for season in seasons %}
+                            <option value="{{ season }}" {% if season == selected_season %}selected{% endif %}>{{ season }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <button type="submit" class="bg-blue-700 text-white py-2 px-4 rounded-lg hover:bg-blue-600">Search</button>
+                </form>
+            </div>
+
+            <!-- Average stats section -->
+            <div class="bg-gray-800 p-6 rounded-lg shadow-md w-2/3 ml-8">
+                <h2 class="text-2xl font-bold mb-4 text-gray-100">Average Stats for {{ player_name }} - Season {{ selected_season }}</h2>
+                <div class="grid grid-cols-4 gap-4 text-gray-100">
+                    <div>
+                        <h3 class="text-lg font-semibold">Points per Game (PTS)</h3>
+                        <p class="text-xl">{{ avg_pts }}</p>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold">Assists per Game (AST)</h3>
+                        <p class="text-xl">{{ avg_ast }}</p>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold">Rebounds per Game (REB)</h3>
+                        <p class="text-xl">{{ avg_reb }}</p>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold">Steals per Game (STL)</h3>
+                        <p class="text-xl">{{ avg_stl }}</p>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold">Blocks per Game (BLK)</h3>
+                        <p class="text-xl">{{ avg_blk }}</p>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold">Turnovers per Game (TOV)</h3>
+                        <p class="text-xl">{{ avg_tov }}</p>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold">3 Points per Game (3PTS)</h3>
+                        <p class="text-xl">{{ avg_3pts }}</p>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold">Personal Fouls per Game (PF)</h3>
+                        <p class="text-xl">{{ avg_pf }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Line check form -->
+        <div class="bg-gray-800 p-6 rounded-lg shadow-md mb-8">
+            <form id="line_form" class="flex flex-col space-y-4">
+                <!-- Hidden field for player name -->
+                <input type="hidden" name="player_name" value="{{ player_name }}">
+
+                <!-- Hidden field for selected season -->
+                <input type="hidden" name="season" value="{{ selected_season }}">
+
+                <div class="flex space-x-4">
+                    <!-- Dropdown for selecting stat type -->
+                    <div class="w-1/3">
+                        <label for="stat_type" class="block text-lg font-semibold text-gray-100">Select Stat Type:</label>
+                        <select id="stat_type" name="stat_type" class="border border-gray-600 bg-gray-700 rounded p-2 w-full text-gray-100">
+                            <option value="PTS">Points</option>
+                            <option value="AST">Assists</option>
+                            <option value="REB">Rebounds</option>
+                            <option value="STL">Steals</option>
+                            <option value="BLK">Blocks</option>
+                            <option value="TOV">Turnovers</option>
+                            <option value="FG3M">3-pointers Made</option>
+                            <option value="PF">Personal Fouls</option>
+                            <option value="DD">Double-double</option>
+                            <option value="TD">Triple-double</option>
+                        </select>
+                    </div>
+
+                    <!-- Field for entering value -->
+                    <div class="w-1/3">
+                        <label for="stat_value" class="block text-lg font-semibold text-gray-100">Enter Value:</label>
+                        <input type="number" id="stat_value" name="stat_value" step="0.1" class="border border-gray-600 bg-gray-700 rounded p-2 w-full text-gray-100" required>
+                    </div>
+
+                    <!-- Over/under selection -->
+                    <div class="w-1/3">
+                        <label class="block text-lg font-semibold text-gray-100">Select:</label>
+                        <div class="flex space-x-4">
+                            <label>
+                                <input type="radio" name="over_under" value="over" checked> Over
+                            </label>
+                            <label>
+                                <input type="radio" name="over_under" value="under"> Under
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="bg-blue-700 text-white py-2 px-4 rounded-lg hover:bg-blue-600">Submit Line</button>
+            </form>
+        </div>
+
+        <!-- Display line result -->
+        <div id="line_result" class="bg-green-900 text-green-100 p-4 rounded mt-4" style="display:none;">
+            <!-- Line result will be displayed here -->
+        </div>
+
+        <!-- Game Log Table -->
+        {% if stats %}
+        <div class="bg-gray-800 p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-bold mb-4 text-gray-100">Game Log</h2>
+            <table class="min-w-full table-auto border-collapse">
+                <thead>
+                    <tr class="bg-gray-700 text-gray-100">
+                        <th class="border px-4 py-2 text-center">DATE</th>
+                        <th class="border px-4 py-2 text-center">MATCH</th>
+                        <th class="border px-4 py-2 text-center">MIN</th>
+                        <th class="border px-4 py-2 text-center">PTS</th>
+                        <th class="border px-4 py-2 text-center">AST</th>
+                        <th class="border px-4 py-2 text-center">REB</th>
+                        <th class="border px-4 py-2 text-center">STL</th>
+                        <th class="border px-4 py-2 text-center">BLK</th>
+                        <th class="border px-4 py-2 text-center">TOV</th>
+                        <th class="border px-4 py-2 text-center">3PTS</th>
+                        <th class="border px-4 py-2 text-center">PF</th>
+                        <th class="border px-4 py-2 text-center">DD</th>
+                        <th class="border px-4 py-2 text-center">TD</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for game in stats %}
+                    <tr class="text-gray-100">
+                        <td class="border px-4 py-2 text-center">{{ game['GAME_DATE'] }}</td>
+                        <td class="border px-4 py-2 text-center">{{ game['MATCHUP'] }}</td>
+                        <td class="border px-4 py-2 text-center">{{ game['MIN'] }}</td>
+                        <td class="border px-4 py-2 text-center">{{ game['PTS'] }}</td>
+                        <td class="border px-4 py-2 text-center">{{ game['AST'] }}</td>
+                        <td class="border px-4 py-2 text-center">{{ game['REB'] }}</td>
+                        <td class="border px-4 py-2 text-center">{{ game['STL'] }}</td>
+                        <td class="border px-4 py-2 text-center">{{ game['BLK'] }}</td>
+                        <td class="border px-4 py-2 text-center">{{ game['TOV'] }}</td>
+                        <td class="border px-4 py-2 text-center">{{ game['FG3M'] }}</td>
+                        <td class="border px-4 py-2 text-center">{{ game['PF'] }}</td>
+                        <td class="border px-4 py-2 text-center">{{ game['DD'] }}</td>
+                        <td class="border px-4 py-2 text-center">{{ game['TD'] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <script>
+            // Function to fetch suggestions based on typed letters
+            function getSuggestions() {
+                const query = document.getElementById('player_name').value;
+                if (query.length < 2) {
+                    document.getElementById('player_name_suggestions').innerHTML = '';
+                    return;
+                }
+
+                fetch(`/autocomplete?query=${query}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const suggestionsDiv = document.getElementById('player_name_suggestions');
+                        suggestionsDiv.innerHTML = '';
+                        data.forEach(item => {
+                            const div = document.createElement('div');
+                            div.textContent = item;
+                            div.onclick = function() {
+                                document.getElementById('player_name').value = item;
+                                suggestionsDiv.innerHTML = '';
+                            };
+                            suggestionsDiv.appendChild(div);
+                        });
+                    });
+            }
+
+            // Function to submit line form via AJAX
+            document.getElementById('line_form').addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                const formData = new FormData(this);
+
+                fetch('/check_line', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const resultDiv = document.getElementById('line_result');
+                    resultDiv.textContent = data.message;
+                    resultDiv.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        </script>
+    </div>
+</body>
+</html>

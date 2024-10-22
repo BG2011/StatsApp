@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NBA Player Stats Search</title>
+    <style>
+        .suggestions {
+            border: 1px solid #ccc;
+            max-height: 150px;
+            overflow-y: auto;
+            background-color: #fff;
+            position: absolute;
+            width: 200px;
+            z-index: 1000;
+        }
+        .suggestions div {
+            padding: 8px;
+            cursor: pointer;
+        }
+        .suggestions div:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <h1>NBA Player Stats Search</h1>
+    <form action="/search_player" method="POST">
+        <label for="player_name">Player Name:</label>
+        <input type="text" id="player_name" name="player_name" oninput="getSuggestions()" autocomplete="off" required>
+        <div id="player_name_suggestions" class="suggestions"></div><br><br>
+
+        <label for="season">Select Season:</label>
+        <select id="season" name="season">
+            {% for season in seasons %}
+            <option value="{{ season }}">{{ season }}</option>
+            {% endfor %}
+        </select><br><br>
+
+        <button type="submit">Search</button>
+    </form>
+
+    <script>
+        // Funkcja do pobierania sugestii na podstawie wpisanych liter
+        function getSuggestions() {
+            const query = document.getElementById('player_name').value;
+            if (query.length < 2) {
+                document.getElementById('player_name_suggestions').innerHTML = '';
+                return;
+            }
+            
+            fetch(`/autocomplete?query=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    const suggestionsDiv = document.getElementById('player_name_suggestions');
+                    suggestionsDiv.innerHTML = '';
+                    data.forEach(item => {
+                        const div = document.createElement('div');
+                        div.textContent = item;
+                        div.onclick = function() {
+                            document.getElementById('player_name').value = item;
+                            suggestionsDiv.innerHTML = '';
+                        };
+                        suggestionsDiv.appendChild(div);
+                    });
+                });
+        }
+    </script>
+</body>
+</html>
