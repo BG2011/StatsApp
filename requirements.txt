@@ -1,0 +1,4 @@
+Flask==2.3.2
+nba-api==1.1.11
+requests==2.31.0
+pandas==2.1.1
