@@ -1,11 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NBA Player Stats Search</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .suggestions div {
+            padding: 8px;
+            cursor: pointer;
+            background-color: #1f2937;
+            color: #f3f4f6;
+        }
+
+        .suggestions div:hover {
+            background-color: #374151;
+        }
+    </style>
 </head>
+
 <body class="bg-gray-900 text-gray-100">
     <div class="container mx-auto px-4 py-8">
         <h1 class="text-4xl font-bold mb-8 text-center text-gray-100">NBA Player Stats Search</h1>
@@ -17,58 +31,66 @@
                 <form action="/search_player" method="POST" class="flex flex-col space-y-4">
                     <div>
                         <label for="player_name" class="block text-lg font-semibold text-gray-100">Player Name:</label>
-                        <input type="text" id="player_name" name="player_name" oninput="getSuggestions()" value="{{ player_name }}" autocomplete="off" required class="border border-gray-600 bg-gray-700 rounded p-2 w-full text-gray-100">
-                        <div id="player_name_suggestions" class="suggestions"></div>
+                        <input type="text" id="player_name" name="player_name" oninput="getSuggestions()"
+                            value="{{ player_name }}" autocomplete="off" required
+                            class="border border-gray-600 bg-gray-700 rounded p-2 w-full text-gray-100">
+                        <div id="player_name_suggestions"
+                            class="suggestions absolute bg-gray-800 w-64 rounded shadow-lg"></div>
                     </div>
 
                     <div>
                         <label for="season" class="block text-lg font-semibold text-gray-100">Select Season:</label>
-                        <select id="season" name="season" class="border border-gray-600 bg-gray-700 rounded p-2 w-full text-gray-100">
+                        <select id="season" name="season"
+                            class="border border-gray-600 bg-gray-700 rounded p-2 w-full text-gray-100">
                             {% for season in seasons %}
-                            <option value="{{ season }}" {% if season == selected_season %}selected{% endif %}>{{ season }}</option>
+                            <option value="{{ season }}" {% if season==selected_season %}selected{% endif %}>{{ season
+                                }}</option>
                             {% endfor %}
                         </select>
                     </div>
 
-                    <button type="submit" class="bg-blue-700 text-white py-2 px-4 rounded-lg hover:bg-blue-600">Search</button>
+                    <button type="submit"
+                        class="bg-blue-700 text-white py-2 px-4 rounded-lg hover:bg-blue-600">Search</button>
                 </form>
             </div>
 
             <!-- Average stats section -->
             <div class="bg-gray-800 p-6 rounded-lg shadow-md w-2/3 ml-8">
-                <h2 class="text-2xl font-bold mb-4 text-gray-100">Average Stats for {{ player_name }} - Season {{ selected_season }}</h2>
+                <h2 class="text-2xl font-bold mb-4 text-gray-100">Average Stats for {{ player_name }} - Season {{
+                    selected_season }}</h2>
+                <!-- Update the Average stats section -->
                 <div class="grid grid-cols-4 gap-4 text-gray-100">
                     <div>
                         <h3 class="text-lg font-semibold">Points per Game (PTS)</h3>
-                        <p class="text-xl">{{ avg_pts }}</p>
+                        <p class="text-xl" id="avg_pts">{{ avg_pts }}</p>
                     </div>
                     <div>
                         <h3 class="text-lg font-semibold">Assists per Game (AST)</h3>
-                        <p class="text-xl">{{ avg_ast }}</p>
+                        <p class="text-xl" id="avg_ast">{{ avg_ast }}</p>
                     </div>
                     <div>
                         <h3 class="text-lg font-semibold">Rebounds per Game (REB)</h3>
-                        <p class="text-xl">{{ avg_reb }}</p>
+                        <p class="text-xl" id="avg_reb">{{ avg_reb }}</p>
                     </div>
                     <div>
                         <h3 class="text-lg font-semibold">Steals per Game (STL)</h3>
-                        <p class="text-xl">{{ avg_stl }}</p>
+                        <p class="text-xl" id="avg_stl">{{ avg_stl }}</p>
                     </div>
                     <div>
                         <h3 class="text-lg font-semibold">Blocks per Game (BLK)</h3>
-                        <p class="text-xl">{{ avg_blk }}</p>
+                        <p class="text-xl" id="avg_blk">{{ avg_blk }}</p>
                     </div>
                     <div>
                         <h3 class="text-lg font-semibold">Turnovers per Game (TOV)</h3>
-                        <p class="text-xl">{{ avg_tov }}</p>
+                        <p class="text-xl" id="avg_tov">{{ avg_tov }}</p>
                     </div>
                     <div>
                         <h3 class="text-lg font-semibold">3 Points per Game (3PTS)</h3>
-                        <p class="text-xl">{{ avg_3pts }}</p>
+                        <p class="text-xl" id="avg_3pts">{{ avg_3pts }}</p>
                     </div>
                     <div>
                         <h3 class="text-lg font-semibold">Personal Fouls per Game (PF)</h3>
-                        <p class="text-xl">{{ avg_pf }}</p>
+                        <p class="text-xl" id="avg_pf">{{ avg_pf }}</p>
                     </div>
                 </div>
             </div>
@@ -77,17 +99,16 @@
         <!-- Line check form -->
         <div class="bg-gray-800 p-6 rounded-lg shadow-md mb-8">
             <form id="line_form" class="flex flex-col space-y-4">
-                <!-- Hidden field for player name -->
                 <input type="hidden" name="player_name" value="{{ player_name }}">
-
-                <!-- Hidden field for selected season -->
                 <input type="hidden" name="season" value="{{ selected_season }}">
 
                 <div class="flex space-x-4">
-                    <!-- Dropdown for selecting stat type -->
                     <div class="w-1/3">
-                        <label for="stat_type" class="block text-lg font-semibold text-gray-100">Select Stat Type:</label>
-                        <select id="stat_type" name="stat_type" class="border border-gray-600 bg-gray-700 rounded p-2 w-full text-gray-100">
+                        <label for="stat_type" class="block text-lg font-semibold text-gray-100">Select Stat
+                            Type:</label>
+                        <!-- Update the stat_type select in the line check form -->
+                        <select id="stat_type" name="stat_type"
+                            class="border border-gray-600 bg-gray-700 rounded p-2 w-full text-gray-100">
                             <option value="PTS">Points</option>
                             <option value="AST">Assists</option>
                             <option value="REB">Rebounds</option>
@@ -98,85 +119,214 @@
                             <option value="PF">Personal Fouls</option>
                             <option value="DD">Double-double</option>
                             <option value="TD">Triple-double</option>
+                            <option value="PTS_AST">Points + Assists</option>
+                            <option value="PTS_REB">Points + Rebounds</option>
+                            <option value="PTS_AST_REB">Points + Assists + Rebounds</option>
                         </select>
                     </div>
 
-                    <!-- Field for entering value -->
                     <div class="w-1/3">
                         <label for="stat_value" class="block text-lg font-semibold text-gray-100">Enter Value:</label>
-                        <input type="number" id="stat_value" name="stat_value" step="0.1" class="border border-gray-600 bg-gray-700 rounded p-2 w-full text-gray-100" required>
+                        <input type="number" id="stat_value" name="stat_value" step="0.1"
+                            class="border border-gray-600 bg-gray-700 rounded p-2 w-full text-gray-100" required>
                     </div>
 
-                    <!-- Over/under selection -->
                     <div class="w-1/3">
                         <label class="block text-lg font-semibold text-gray-100">Select:</label>
                         <div class="flex space-x-4">
-                            <label>
-                                <input type="radio" name="over_under" value="over" checked> Over
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="over_under" value="over" checked class="text-blue-600">
+                                <span class="ml-2">Over</span>
                             </label>
-                            <label>
-                                <input type="radio" name="over_under" value="under"> Under
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="over_under" value="under" class="text-blue-600">
+                                <span class="ml-2">Under</span>
                             </label>
                         </div>
                     </div>
                 </div>
 
-                <button type="submit" class="bg-blue-700 text-white py-2 px-4 rounded-lg hover:bg-blue-600">Submit Line</button>
+                <button type="submit" class="bg-blue-700 text-white py-2 px-4 rounded-lg hover:bg-blue-600">Check
+                    Line</button>
             </form>
         </div>
 
         <!-- Display line result -->
-        <div id="line_result" class="bg-green-900 text-green-100 p-4 rounded mt-4" style="display:none;">
-            <!-- Line result will be displayed here -->
+        <div id="line_result" class="bg-green-900 text-green-100 p-4 rounded mt-4" style="display:none;"></div>
+        <!-- Add this after the Line check form and before the Game Log Table -->
+        <div class="bg-gray-800 p-6 rounded-lg shadow-md mb-8">
+            <div class="flex items-center space-x-4">
+                <div class="w-1/3">
+                    <label for="team_filter" class="block text-lg font-semibold text-gray-100 mb-2">Filter by
+                        Team:</label>
+                    <select id="team_filter"
+                        class="border border-gray-600 bg-gray-700 rounded p-2 w-full text-gray-100">
+                        <option value="">All Teams</option>
+                        <option value="ATL">Atlanta Hawks</option>
+                        <option value="BOS">Boston Celtics</option>
+                        <option value="BKN">Brooklyn Nets</option>
+                        <option value="CHA">Charlotte Hornets</option>
+                        <option value="CHI">Chicago Bulls</option>
+                        <option value="CLE">Cleveland Cavaliers</option>
+                        <option value="DAL">Dallas Mavericks</option>
+                        <option value="DEN">Denver Nuggets</option>
+                        <option value="DET">Detroit Pistons</option>
+                        <option value="GSW">Golden State Warriors</option>
+                        <option value="HOU">Houston Rockets</option>
+                        <option value="IND">Indiana Pacers</option>
+                        <option value="LAC">LA Clippers</option>
+                        <option value="LAL">Los Angeles Lakers</option>
+                        <option value="MEM">Memphis Grizzlies</option>
+                        <option value="MIA">Miami Heat</option>
+                        <option value="MIL">Milwaukee Bucks</option>
+                        <option value="MIN">Minnesota Timberwolves</option>
+                        <option value="NOP">New Orleans Pelicans</option>
+                        <option value="NYK">New York Knicks</option>
+                        <option value="OKC">Oklahoma City Thunder</option>
+                        <option value="ORL">Orlando Magic</option>
+                        <option value="PHI">Philadelphia 76ers</option>
+                        <option value="PHX">Phoenix Suns</option>
+                        <option value="POR">Portland Trail Blazers</option>
+                        <option value="SAC">Sacramento Kings</option>
+                        <option value="SAS">San Antonio Spurs</option>
+                        <option value="TOR">Toronto Raptors</option>
+                        <option value="UTA">Utah Jazz</option>
+                        <option value="WAS">Washington Wizards</option>
+                    </select>
+                </div>
+                <button onclick="clearTeamFilter()"
+                    class="bg-blue-700 text-white py-2 px-4 rounded-lg hover:bg-blue-600 mt-8">
+                    Clear Filter
+                </button>
+            </div>
         </div>
-
         <!-- Game Log Table -->
         {% if stats %}
         <div class="bg-gray-800 p-6 rounded-lg shadow-md">
             <h2 class="text-2xl font-bold mb-4 text-gray-100">Game Log</h2>
-            <table class="min-w-full table-auto border-collapse">
-                <thead>
-                    <tr class="bg-gray-700 text-gray-100">
-                        <th class="border px-4 py-2 text-center">DATE</th>
-                        <th class="border px-4 py-2 text-center">MATCH</th>
-                        <th class="border px-4 py-2 text-center">MIN</th>
-                        <th class="border px-4 py-2 text-center">PTS</th>
-                        <th class="border px-4 py-2 text-center">AST</th>
-                        <th class="border px-4 py-2 text-center">REB</th>
-                        <th class="border px-4 py-2 text-center">STL</th>
-                        <th class="border px-4 py-2 text-center">BLK</th>
-                        <th class="border px-4 py-2 text-center">TOV</th>
-                        <th class="border px-4 py-2 text-center">3PTS</th>
-                        <th class="border px-4 py-2 text-center">PF</th>
-                        <th class="border px-4 py-2 text-center">DD</th>
-                        <th class="border px-4 py-2 text-center">TD</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for game in stats %}
-                    <tr class="text-gray-100">
-                        <td class="border px-4 py-2 text-center">{{ game['GAME_DATE'] }}</td>
-                        <td class="border px-4 py-2 text-center">{{ game['MATCHUP'] }}</td>
-                        <td class="border px-4 py-2 text-center">{{ game['MIN'] }}</td>
-                        <td class="border px-4 py-2 text-center">{{ game['PTS'] }}</td>
-                        <td class="border px-4 py-2 text-center">{{ game['AST'] }}</td>
-                        <td class="border px-4 py-2 text-center">{{ game['REB'] }}</td>
-                        <td class="border px-4 py-2 text-center">{{ game['STL'] }}</td>
-                        <td class="border px-4 py-2 text-center">{{ game['BLK'] }}</td>
-                        <td class="border px-4 py-2 text-center">{{ game['TOV'] }}</td>
-                        <td class="border px-4 py-2 text-center">{{ game['FG3M'] }}</td>
-                        <td class="border px-4 py-2 text-center">{{ game['PF'] }}</td>
-                        <td class="border px-4 py-2 text-center">{{ game['DD'] }}</td>
-                        <td class="border px-4 py-2 text-center">{{ game['TD'] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="overflow-x-auto">
+                <table class="min-w-full table-auto">
+                    <thead class="bg-gray-900">
+                        <tr>
+                            <th class="px-4 py-2 text-gray-100">DATE</th>
+                            <th class="px-4 py-2 text-gray-100">MATCH</th>
+                            <th class="px-4 py-2 text-gray-100">MIN</th>
+                            <th class="px-4 py-2 text-gray-100">PTS</th>
+                            <th class="px-4 py-2 text-gray-100">AST</th>
+                            <th class="px-4 py-2 text-gray-100">REB</th>
+                            <th class="px-4 py-2 text-gray-100">STL</th>
+                            <th class="px-4 py-2 text-gray-100">BLK</th>
+                            <th class="px-4 py-2 text-gray-100">TOV</th>
+                            <th class="px-4 py-2 text-gray-100">3PTS</th>
+                            <th class="px-4 py-2 text-gray-100">PF</th>
+                            <th class="px-4 py-2 text-gray-100">DD</th>
+                            <th class="px-4 py-2 text-gray-100">TD</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for game in stats %}
+                        <tr class="hover:bg-gray-700 transition-colors" id="game-row-{{ loop.index }}">
+                            <td class="border px-4 py-2 text-gray-100">{{ game['GAME_DATE'] }}</td>
+                            <td class="border px-4 py-2 text-gray-100">{{ game['MATCHUP'] }}</td>
+                            <td class="border px-4 py-2 text-gray-100">{{ game['MIN'] }}</td>
+                            <td class="border px-4 py-2 text-gray-100">{{ game['PTS'] }}</td>
+                            <td class="border px-4 py-2 text-gray-100">{{ game['AST'] }}</td>
+                            <td class="border px-4 py-2 text-gray-100">{{ game['REB'] }}</td>
+                            <td class="border px-4 py-2 text-gray-100">{{ game['STL'] }}</td>
+                            <td class="border px-4 py-2 text-gray-100">{{ game['BLK'] }}</td>
+                            <td class="border px-4 py-2 text-gray-100">{{ game['TOV'] }}</td>
+                            <td class="border px-4 py-2 text-gray-100">{{ game['FG3M'] }}</td>
+                            <td class="border px-4 py-2 text-gray-100">{{ game['PF'] }}</td>
+                            <td class="border px-4 py-2 text-gray-100">{{ game['DD'] }}</td>
+                            <td class="border px-4 py-2 text-gray-100">{{ game['TD'] }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
         {% endif %}
 
         <script>
-            // Function to fetch suggestions based on typed letters
+            // Add these functions to your existing script section
+            function filterTeam() {
+                const selectedTeam = document.getElementById('team_filter').value;
+                const rows = document.querySelectorAll('tbody tr');
+                let visibleGames = 0;
+
+                rows.forEach(row => {
+                    const matchupCell = row.querySelector('td:nth-child(2)').textContent;
+                    if (!selectedTeam || matchupCell.includes(selectedTeam)) {
+                        row.style.display = '';
+                        visibleGames++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                // Update stats for filtered games
+                if (selectedTeam) {
+                    updateFilteredStats(rows, selectedTeam);
+                }
+            }
+
+            function clearTeamFilter() {
+                document.getElementById('team_filter').value = '';
+                filterTeam();
+                // Reset stats to original values
+                updateFilteredStats(document.querySelectorAll('tbody tr'), '');
+            }
+
+            function updateFilteredStats(rows, selectedTeam) {
+                if (!rows.length) return;
+
+                let stats = {
+                    games: 0,
+                    pts: 0,
+                    ast: 0,
+                    reb: 0,
+                    stl: 0,
+                    blk: 0,
+                    tov: 0,
+                    fg3m: 0,
+                    pf: 0,
+                    dd: 0,
+                    td: 0
+                };
+
+                rows.forEach(row => {
+                    const matchupCell = row.querySelector('td:nth-child(2)').textContent;
+                    if (!selectedTeam || matchupCell.includes(selectedTeam)) {
+                        stats.games++;
+                        stats.pts += parseFloat(row.querySelector('td:nth-child(4)').textContent) || 0;
+                        stats.ast += parseFloat(row.querySelector('td:nth-child(5)').textContent) || 0;
+                        stats.reb += parseFloat(row.querySelector('td:nth-child(6)').textContent) || 0;
+                        stats.stl += parseFloat(row.querySelector('td:nth-child(7)').textContent) || 0;
+                        stats.blk += parseFloat(row.querySelector('td:nth-child(8)').textContent) || 0;
+                        stats.tov += parseFloat(row.querySelector('td:nth-child(9)').textContent) || 0;
+                        stats.fg3m += parseFloat(row.querySelector('td:nth-child(10)').textContent) || 0;
+                        stats.pf += parseFloat(row.querySelector('td:nth-child(11)').textContent) || 0;
+                        stats.dd += row.querySelector('td:nth-child(12)').textContent === 'YES' ? 1 : 0;
+                        stats.td += row.querySelector('td:nth-child(13)').textContent === 'YES' ? 1 : 0;
+                    }
+                });
+
+                // Update averages display
+                if (stats.games > 0) {
+                    document.querySelector('[id="avg_pts"]').textContent = (stats.pts / stats.games).toFixed(2);
+                    document.querySelector('[id="avg_ast"]').textContent = (stats.ast / stats.games).toFixed(2);
+                    document.querySelector('[id="avg_reb"]').textContent = (stats.reb / stats.games).toFixed(2);
+                    document.querySelector('[id="avg_stl"]').textContent = (stats.stl / stats.games).toFixed(2);
+                    document.querySelector('[id="avg_blk"]').textContent = (stats.blk / stats.games).toFixed(2);
+                    document.querySelector('[id="avg_tov"]').textContent = (stats.tov / stats.games).toFixed(2);
+                    document.querySelector('[id="avg_3pts"]').textContent = (stats.fg3m / stats.games).toFixed(2);
+                    document.querySelector('[id="avg_pf"]').textContent = (stats.pf / stats.games).toFixed(2);
+                }
+            }
+
+            // Add event listener for team filter
+            document.getElementById('team_filter').addEventListener('change', filterTeam);
+
             function getSuggestions() {
                 const query = document.getElementById('player_name').value;
                 if (query.length < 2) {
@@ -192,36 +342,96 @@
                         data.forEach(item => {
                             const div = document.createElement('div');
                             div.textContent = item;
-                            div.onclick = function() {
+                            div.onclick = function () {
                                 document.getElementById('player_name').value = item;
                                 suggestionsDiv.innerHTML = '';
                             };
+                            div.className = 'p-2 hover:bg-gray-700 cursor-pointer';
                             suggestionsDiv.appendChild(div);
                         });
                     });
             }
 
-            // Function to submit line form via AJAX
-            document.getElementById('line_form').addEventListener('submit', function(event) {
+            function highlightRows(statType, statValue, overUnder) {
+                const rows = document.querySelectorAll('tbody tr');
+
+                rows.forEach(row => {
+                    row.classList.remove('bg-green-600');
+
+                    const cells = row.querySelectorAll('td');
+                    let value;
+
+                    switch (statType) {
+                        case 'PTS': value = parseFloat(cells[3].textContent); break;
+                        case 'AST': value = parseFloat(cells[4].textContent); break;
+                        case 'REB': value = parseFloat(cells[5].textContent); break;
+                        case 'STL': value = parseFloat(cells[6].textContent); break;
+                        case 'BLK': value = parseFloat(cells[7].textContent); break;
+                        case 'TOV': value = parseFloat(cells[8].textContent); break;
+                        case 'FG3M': value = parseFloat(cells[9].textContent); break;
+                        case 'PF': value = parseFloat(cells[10].textContent); break;
+                        case 'DD': value = cells[11].textContent === 'YES' ? 1 : 0; break;
+                        case 'TD': value = cells[12].textContent === 'YES' ? 1 : 0; break;
+                        case 'PTS_AST':
+                            value = parseFloat(cells[3].textContent) + parseFloat(cells[4].textContent);
+                            break;
+                        case 'PTS_REB':
+                            value = parseFloat(cells[3].textContent) + parseFloat(cells[5].textContent);
+                            break;
+                        case 'PTS_AST_REB':
+                            value = parseFloat(cells[3].textContent) + parseFloat(cells[4].textContent) + parseFloat(cells[5].textContent);
+                            break;
+                    }
+
+                    let covered;
+                    if (statType === 'DD' || statType === 'TD') {
+                        covered = overUnder === 'over' ? value === 1 : value === 0;
+                    } else {
+                        covered = overUnder === 'over' ? value > statValue : value < statValue;
+                    }
+
+                    if (covered) {
+                        row.classList.add('bg-green-600');
+                    }
+                });
+            }
+
+            document.getElementById('line_form').addEventListener('submit', function (event) {
                 event.preventDefault();
 
                 const formData = new FormData(this);
+                const statType = formData.get('stat_type');
+                const statValue = parseFloat(formData.get('stat_value'));
+                const overUnder = formData.get('over_under');
 
                 fetch('/check_line', {
                     method: 'POST',
                     body: formData
                 })
-                .then(response => response.json())
-                .then(data => {
-                    const resultDiv = document.getElementById('line_result');
-                    resultDiv.textContent = data.message;
-                    resultDiv.style.display = 'block';
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
+                    .then(response => response.json())
+                    .then(data => {
+                        const resultDiv = document.getElementById('line_result');
+                        if (data.success) {
+                            resultDiv.textContent = data.message;
+                            resultDiv.style.display = 'block';
+                            resultDiv.className = 'bg-green-900 text-green-100 p-4 rounded mt-4';
+                            highlightRows(statType, statValue, overUnder);
+                        } else {
+                            resultDiv.textContent = data.error || 'An error occurred';
+                            resultDiv.style.display = 'block';
+                            resultDiv.className = 'bg-red-900 text-red-100 p-4 rounded mt-4';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        const resultDiv = document.getElementById('line_result');
+                        resultDiv.textContent = 'An error occurred while processing your request';
+                        resultDiv.style.display = 'block';
+                        resultDiv.className = 'bg-red-900 text-red-100 p-4 rounded mt-4';
+                    });
             });
         </script>
     </div>
 </body>
+
 </html>

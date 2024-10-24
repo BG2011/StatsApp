@@ -65,15 +65,27 @@ def calculate_averages(stats_df):
 # Endpoint do obsługi autouzupełniania
 @app.route('/autocomplete', methods=['GET'])
 def autocomplete():
-    query = request.args.get('query').lower()
+    query = request.args.get('query', '').lower().strip()
+    if not query:
+        return jsonify([])
 
-    # Pobieramy tylko aktywnych zawodników
     active_players = players.get_active_players()
+    suggestions = []
+    
+    for player in active_players:
+        full_name = f"{player['first_name']} {player['last_name']}".lower()
+        first_name = player['first_name'].lower()
+        last_name = player['last_name'].lower()
+        
+        if (query in full_name or 
+            query in first_name or 
+            query in last_name or 
+            first_name.startswith(query) or 
+            last_name.startswith(query)):
+            suggestions.append(f"{player['first_name']} {player['last_name']}")
 
-    # Wyszukujemy zawodników, którzy pasują do wpisanego zapytania (imię lub nazwisko)
-    suggestions = list(set([f"{player['first_name']} {player['last_name']}" for player in active_players if query in (player['first_name'].lower() + ' ' + player['last_name'].lower())]))
-
-    return jsonify(suggestions)
+    suggestions = sorted(list(set(suggestions)))
+    return jsonify(suggestions[:10])
 
 # Funkcja do generowania 5 ostatnich sezonów
 def generate_seasons():
@@ -89,35 +101,62 @@ def generate_seasons():
 # Endpoint for checking the line
 @app.route('/check_line', methods=['POST'])
 def check_line():
-    player_name = request.form['player_name']
-    stat_type = request.form['stat_type']
-    stat_value = float(request.form['stat_value'])
-    over_under = request.form['over_under']
-    season = request.form['season']
+    try:
+        player_name = request.form['player_name']
+        stat_type = request.form['stat_type']
+        stat_value = float(request.form['stat_value'])
+        over_under = request.form['over_under']
+        season = request.form['season']
 
-    # Get player ID
-    first_name, last_name = player_name.split(' ', 1)
-    player_id = get_player_id(first_name, last_name)
+        # Get player ID
+        first_name, last_name = player_name.split(' ', 1)
+        player_id = get_player_id(first_name, last_name)
 
-    if not player_id:
-        return jsonify({"message": f"Player {player_name} not found."})
+        if not player_id:
+            return jsonify({"error": f"Player {player_name} not found."})
 
-    # Get player stats
-    stats_df = get_player_stats(player_id, season)
+        # Get player stats
+        stats_df = get_player_stats(player_id, season)
 
-    # Count how many times the stat exceeded or did not exceed the value
-    if over_under == 'over':
-        line_hits = stats_df[stats_df[stat_type] > stat_value].shape[0]
-    else:
-        line_hits = stats_df[stats_df[stat_type] < stat_value].shape[0]
+        # Handle combined stats
+        if stat_type == 'PTS_AST':
+            stats_df['COMBINED'] = stats_df['PTS'] + stats_df['AST']
+            stat_column = 'COMBINED'
+        elif stat_type == 'PTS_REB':
+            stats_df['COMBINED'] = stats_df['PTS'] + stats_df['REB']
+            stat_column = 'COMBINED'
+        elif stat_type == 'PTS_AST_REB':
+            stats_df['COMBINED'] = stats_df['PTS'] + stats_df['AST'] + stats_df['REB']
+            stat_column = 'COMBINED'
+        else:
+            stat_column = stat_type
 
-    # Total number of games
-    total_games = stats_df.shape[0]
+        # Count how many times the stat exceeded or did not exceed the value
+        if over_under == 'over':
+            if stat_type in ['DD', 'TD']:
+                line_hits = stats_df[stats_df[stat_type] == 'YES'].shape[0]
+            else:
+                line_hits = stats_df[stats_df[stat_column] > stat_value].shape[0]
+        else:
+            if stat_type in ['DD', 'TD']:
+                line_hits = stats_df[stats_df[stat_type] == 'NO'].shape[0]
+            else:
+                line_hits = stats_df[stats_df[stat_column] < stat_value].shape[0]
 
-    # Message to display
-    message = f"Line {'over' if over_under == 'over' else 'under'} {stat_value} {stat_type} was hit {line_hits}/{total_games} times in the selected season."
+        total_games = stats_df.shape[0]
+        hit_percentage = (line_hits / total_games) * 100 if total_games > 0 else 0
 
-    return jsonify({"message": message})
+        stat_display = {
+            'PTS_AST': 'Points + Assists',
+            'PTS_REB': 'Points + Rebounds',
+            'PTS_AST_REB': 'Points + Assists + Rebounds'
+        }.get(stat_type, stat_type)
+
+        message = f"Line {over_under} {stat_value} {stat_display} hit {line_hits}/{total_games} times ({hit_percentage:.1f}%)"
+        return jsonify({"message": message, "success": True})
+
+    except Exception as e:
+        return jsonify({"error": str(e), "success": False}), 500
 
 
 @app.route('/')
@@ -130,37 +169,54 @@ def index():
 def search_player():
     player_name = request.form['player_name']
     season = request.form['season']
+    
+    # Get line checking parameters
+    stat_type = request.form.get('stat_type')
+    try:
+        stat_value = float(request.form.get('stat_value', 0))
+    except (ValueError, TypeError):
+        stat_value = None
+    over_under = request.form.get('over_under')
 
-    # Rozbijamy imię i nazwisko (zakładamy, że są oddzielone spacją)
     try:
         first_name, last_name = player_name.split(' ', 1)
     except ValueError:
         return "Please enter both first and last name."
 
-    # Pobieramy ID zawodnika
     player_id = get_player_id(first_name, last_name)
     if player_id is None:
         return f"Player {first_name} {last_name} not found."
 
-    # Pobieramy statystyki zawodnika
     stats_df = get_player_stats(player_id, season)
+    
+    # Handle line highlighting
+    if all([stat_type, stat_value is not None, over_under]):
+        if stat_type in ['DD', 'TD']:
+            stats_df['covered'] = stats_df[stat_type] == 'YES' if over_under == 'over' else stats_df[stat_type] == 'NO'
+        else:
+            stats_df['covered'] = stats_df[stat_type] > stat_value if over_under == 'over' else stats_df[stat_type] < stat_value
+    else:
+        stats_df['covered'] = False
+
     averages = calculate_averages(stats_df)
 
-    # Przekazujemy dane do template'a HTML
     seasons = generate_seasons()
     return render_template('player_stats.html', 
-                           seasons=seasons, 
-                           player_name=player_name, 
-                           selected_season=season, 
-                           stats=stats_df.to_dict(orient='records'), 
-                           avg_pts=averages['avg_pts'], 
-                           avg_ast=averages['avg_ast'], 
-                           avg_reb=averages['avg_reb'], 
-                           avg_stl=averages['avg_stl'], 
-                           avg_blk=averages['avg_blk'], 
-                           avg_tov=averages['avg_tov'], 
-                           avg_3pts=averages['avg_3pts'], 
-                           avg_pf=averages['avg_pf'])
+                         seasons=seasons, 
+                         player_name=player_name, 
+                         selected_season=season, 
+                         stats=stats_df.to_dict(orient='records'), 
+                         avg_pts=averages['avg_pts'],
+                         avg_ast=averages['avg_ast'],
+                         avg_reb=averages['avg_reb'],
+                         avg_stl=averages['avg_stl'],
+                         avg_blk=averages['avg_blk'],
+                         avg_tov=averages['avg_tov'],
+                         avg_3pts=averages['avg_3pts'],
+                         avg_pf=averages['avg_pf'],
+                         current_stat_type=stat_type,
+                         current_stat_value=stat_value,
+                         current_over_under=over_under)
 
 if __name__ == '__main__':
     app.run(debug=True)
