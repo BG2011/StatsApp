@@ -4,241 +4,670 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NBA Player Stats Search</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>NBA Player Stats</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <style>
-        .suggestions div {
-            padding: 8px;
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-accent: #1a1a24;
+            --accent: #2cf583;
+            --accent-hover: #33FFFF;
+            --accent-dark: #00cccc;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --border-color: rgba(0, 255, 255, 0.1);
+            --glow: 0 0 20px rgba(0, 255, 255, 0.2);
+            --glow-strong: 0 0 30px rgba(0, 255, 255, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .main-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Header styles pozostają bez zmian */
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            box-shadow: var(--glow);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(45deg, var(--text-primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+        }
+
+        /* Control panel styles pozostają bez zmian */
+        .control-panel {
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+}
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        /* Form styles pozostają bez zmian */
+        .form-group {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-accent);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--accent);
+            box-shadow: var(--glow);
+        }
+
+        button {
+            background: transparent;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
             cursor: pointer;
-            background-color: #1f2937;
-            color: #f3f4f6;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            width: 100%;
+        }
+
+        button:hover {
+            background: var(--accent);
+            color: var(--bg-primary);
+            box-shadow: var(--glow-strong);
+        }
+
+        /* Updated player info and stats styles */
+        .player-info {
+            padding: 1rem;
+            background-color: var(--bg-accent);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            margin-bottom: 1.5rem;
+        }
+
+        .player-header {
+            display: grid;
+            grid-template-columns: 250px repeat(4, 1fr);
+            gap: 0.75rem;
+            width: 100%;
+            height: 300px;
+        }
+
+        .player-image-details {
+            text-align: center;
+            padding: 0.75rem;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            grid-column: 1;
+            height: 100%;
+        }
+
+        .error-message {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            color: var(--text-primary);
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .player-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .season-info {
+            font-size: 0.875rem;
+            color: var(--accent);
+            margin-bottom: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .player-image {
+            width: 180px;
+            height: 132px;
+            overflow: hidden;
+            border-radius: 8px;
+            margin: 0.75rem auto;
+        }
+
+        .player-headshot {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .team-info {
+            font-size: 1rem;
+            color: var(--text-primary);
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .player-stats {
+            grid-column: 2 / -1;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+        }
+
+        .stat-title {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin: 0.5rem 0;
+        }
+
+        .stat-desc {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .line-check {
+            margin-top: 2rem;
+            padding: 2rem;
+            background: var(--bg-secondary);
+            border-radius: 16px;
+        }
+
+        .line-check h3 {
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            font-size: 1.25rem;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .line-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .check-line-button {
+            background: transparent;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            width: 100%;
+            max-width: 200px;
+            margin: 0 auto;
+            display: block;
+        }
+
+        .check-line-button:hover {
+            background: var(--accent);
+            color: var(--bg-primary);
+            box-shadow: var(--glow-strong);
+        }
+
+        #line_result {
+            margin: 1.5rem auto;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            background: rgba(44, 245, 131, 0.1);
+            color: var(--accent);
+            text-align: center;
+            font-weight: 500;
+            width: fit-content;
+            min-width: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            border: 1px solid rgba(44, 245, 131, 0.2);
+        }
+
+        .line-check-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Suggestions styles remain unchanged */
+        .suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--bg-accent);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .suggestions div {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
 
         .suggestions div:hover {
-            background-color: #374151;
+            background: var(--bg-secondary);
+            color: var(--accent);
+        }
+
+        /* Table styles remain unchanged */
+        .table-responsive {
+            overflow-x: auto;
+            margin-top: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-accent);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th,
+        td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--bg-secondary);
+            color: var(--accent);
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+        }
+
+        tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        tr.highlight {
+            background: rgba(44, 245, 131, 0.2);
+            /* Jeszcze bardziej zwiększona nieprzezroczystość */
+        }
+
+        tr.highlight:hover {
+            background: rgba(44, 245, 131, 0.25);
+        }
+
+        /* Media queries */
+        @media (max-width: 1024px) {
+            .player-header {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .player-stats {
+                grid-column: 1;
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 1rem;
+            }
+
+            .player-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .player-image-details {
+                width: 100%;
+                max-width: none;
+            }
+
+            .stat-card {
+                height: 100px;
+            }
+
+            .value {
+                font-size: 1.5rem;
+            }
+
+            .line-options {
+                grid-template-columns: 1fr;
+            }
+
+            #line_result {
+                min-width: 90%;
+                font-size: 0.9rem;
+                padding: 0.75rem 1rem;
+            }
+
+            th,
+            td {
+                padding: 0.75rem;
+                font-size: 0.875rem;
+            }
         }
     </style>
 </head>
 
-<body class="bg-gray-900 text-gray-100">
-    <div class="container mx-auto px-4 py-8">
-        <h1 class="text-4xl font-bold mb-8 text-center text-gray-100">NBA Player Stats Search</h1>
+<body>
+    <div class="main-container">
+        <!-- Header -->
+        <header class="header">
+            <a href="https://overdogbets.com/dashboard/main/dashboard/nba.html">
+                <img src="https://overdogbets.com/logo.png" style="width:20%">
+              </a>
+            <h1>NBA Player Statistics</h1>
+            <p>Search and analyze player performance</p>
+        </header>
 
-        <!-- Flexbox layout: Search form + Average stats section -->
-        <div class="flex justify-between items-start mb-8">
-            <!-- Search form -->
-            <div class="bg-gray-800 p-6 rounded-lg shadow-md w-1/4">
-                <form action="/search_player" method="POST" class="flex flex-col space-y-4">
-                    <div>
-                        <label for="player_name" class="block text-lg font-semibold text-gray-100">Player Name:</label>
-                        <input type="text" id="player_name" name="player_name" oninput="getSuggestions()"
-                            value="{{ player_name }}" autocomplete="off" required
-                            class="border border-gray-600 bg-gray-700 rounded p-2 w-full text-gray-100">
-                        <div id="player_name_suggestions"
-                            class="suggestions absolute bg-gray-800 w-64 rounded shadow-lg"></div>
-                    </div>
-
-                    <div>
-                        <label for="season" class="block text-lg font-semibold text-gray-100">Select Season:</label>
-                        <select id="season" name="season"
-                            class="border border-gray-600 bg-gray-700 rounded p-2 w-full text-gray-100">
-                            {% for season in seasons %}
-                            <option value="{{ season }}" {% if season==selected_season %}selected{% endif %}>{{ season
-                                }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <button type="submit"
-                        class="bg-blue-700 text-white py-2 px-4 rounded-lg hover:bg-blue-600">Search</button>
-                </form>
-            </div>
-
-            <!-- Average stats section -->
-            <div class="bg-gray-800 p-6 rounded-lg shadow-md w-2/3 ml-8">
-                <h2 class="text-2xl font-bold mb-4 text-gray-100">Average Stats for {{ player_name }} - Season {{
-                    selected_season }}</h2>
-                <!-- Update the Average stats section -->
-                <div class="grid grid-cols-4 gap-4 text-gray-100">
-                    <div>
-                        <h3 class="text-lg font-semibold">Points per Game (PTS)</h3>
-                        <p class="text-xl" id="avg_pts">{{ avg_pts }}</p>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-semibold">Assists per Game (AST)</h3>
-                        <p class="text-xl" id="avg_ast">{{ avg_ast }}</p>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-semibold">Rebounds per Game (REB)</h3>
-                        <p class="text-xl" id="avg_reb">{{ avg_reb }}</p>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-semibold">Steals per Game (STL)</h3>
-                        <p class="text-xl" id="avg_stl">{{ avg_stl }}</p>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-semibold">Blocks per Game (BLK)</h3>
-                        <p class="text-xl" id="avg_blk">{{ avg_blk }}</p>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-semibold">Turnovers per Game (TOV)</h3>
-                        <p class="text-xl" id="avg_tov">{{ avg_tov }}</p>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-semibold">3 Points per Game (3PTS)</h3>
-                        <p class="text-xl" id="avg_3pts">{{ avg_3pts }}</p>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-semibold">Personal Fouls per Game (PF)</h3>
-                        <p class="text-xl" id="avg_pf">{{ avg_pf }}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Line check form -->
-        <div class="bg-gray-800 p-6 rounded-lg shadow-md mb-8">
-            <form id="line_form" class="flex flex-col space-y-4">
-                <input type="hidden" name="player_name" value="{{ player_name }}">
-                <input type="hidden" name="season" value="{{ selected_season }}">
-
-                <div class="flex space-x-4">
-                    <div class="w-1/3">
-                        <label for="stat_type" class="block text-lg font-semibold text-gray-100">Select Stat
-                            Type:</label>
-                        <!-- Update the stat_type select in the line check form -->
-                        <select id="stat_type" name="stat_type"
-                            class="border border-gray-600 bg-gray-700 rounded p-2 w-full text-gray-100">
-                            <option value="PTS">Points</option>
-                            <option value="AST">Assists</option>
-                            <option value="REB">Rebounds</option>
-                            <option value="STL">Steals</option>
-                            <option value="BLK">Blocks</option>
-                            <option value="TOV">Turnovers</option>
-                            <option value="FG3M">3-pointers Made</option>
-                            <option value="PF">Personal Fouls</option>
-                            <option value="DD">Double-double</option>
-                            <option value="TD">Triple-double</option>
-                            <option value="PTS_AST">Points + Assists</option>
-                            <option value="PTS_REB">Points + Rebounds</option>
-                            <option value="PTS_AST_REB">Points + Assists + Rebounds</option>
-                        </select>
-                    </div>
-
-                    <div class="w-1/3">
-                        <label for="stat_value" class="block text-lg font-semibold text-gray-100">Enter Value:</label>
-                        <input type="number" id="stat_value" name="stat_value" step="0.1"
-                            class="border border-gray-600 bg-gray-700 rounded p-2 w-full text-gray-100" required>
-                    </div>
-
-                    <div class="w-1/3">
-                        <label class="block text-lg font-semibold text-gray-100">Select:</label>
-                        <div class="flex space-x-4">
-                            <label class="inline-flex items-center">
-                                <input type="radio" name="over_under" value="over" checked class="text-blue-600">
-                                <span class="ml-2">Over</span>
-                            </label>
-                            <label class="inline-flex items-center">
-                                <input type="radio" name="over_under" value="under" class="text-blue-600">
-                                <span class="ml-2">Under</span>
-                            </label>
-                        </div>
-                    </div>
+        <!-- Search Form -->
+        <div class="control-panel">
+            <form action="{{ url_for('search_player') }}" method="post" class="controls">
+                <div class="form-group">
+                    <input type="text" id="player_name" name="player_name" value="{{ player_name }}"
+                        placeholder="Enter player name" autocomplete="off" required>
+                    <div id="player_name_suggestions" class="suggestions"></div>
                 </div>
 
-                <button type="submit" class="bg-blue-700 text-white py-2 px-4 rounded-lg hover:bg-blue-600">Check
-                    Line</button>
+                <div class="form-group">
+                    <select name="season" id="season" required>
+                        {% for season in seasons %}
+                        <option value="{{ season }}" {% if season==selected_season %}selected{% endif %}>
+                            {{ season }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit">Search</button>
             </form>
         </div>
 
-        <!-- Display line result -->
-        <div id="line_result" class="bg-green-900 text-green-100 p-4 rounded mt-4" style="display:none;"></div>
-        <!-- Add this after the Line check form and before the Game Log Table -->
-        <div class="bg-gray-800 p-6 rounded-lg shadow-md mb-8">
-            <div class="flex items-center space-x-4">
-                <div class="w-1/3">
-                    <label for="team_filter" class="block text-lg font-semibold text-gray-100 mb-2">Filter by
-                        Team:</label>
-                    <select id="team_filter"
-                        class="border border-gray-600 bg-gray-700 rounded p-2 w-full text-gray-100">
-                        <option value="">All Teams</option>
-                        <option value="ATL">Atlanta Hawks</option>
-                        <option value="BOS">Boston Celtics</option>
-                        <option value="BKN">Brooklyn Nets</option>
-                        <option value="CHA">Charlotte Hornets</option>
-                        <option value="CHI">Chicago Bulls</option>
-                        <option value="CLE">Cleveland Cavaliers</option>
-                        <option value="DAL">Dallas Mavericks</option>
-                        <option value="DEN">Denver Nuggets</option>
-                        <option value="DET">Detroit Pistons</option>
-                        <option value="GSW">Golden State Warriors</option>
-                        <option value="HOU">Houston Rockets</option>
-                        <option value="IND">Indiana Pacers</option>
-                        <option value="LAC">LA Clippers</option>
-                        <option value="LAL">Los Angeles Lakers</option>
-                        <option value="MEM">Memphis Grizzlies</option>
-                        <option value="MIA">Miami Heat</option>
-                        <option value="MIL">Milwaukee Bucks</option>
-                        <option value="MIN">Minnesota Timberwolves</option>
-                        <option value="NOP">New Orleans Pelicans</option>
-                        <option value="NYK">New York Knicks</option>
-                        <option value="OKC">Oklahoma City Thunder</option>
-                        <option value="ORL">Orlando Magic</option>
-                        <option value="PHI">Philadelphia 76ers</option>
-                        <option value="PHX">Phoenix Suns</option>
-                        <option value="POR">Portland Trail Blazers</option>
-                        <option value="SAC">Sacramento Kings</option>
-                        <option value="SAS">San Antonio Spurs</option>
-                        <option value="TOR">Toronto Raptors</option>
-                        <option value="UTA">Utah Jazz</option>
-                        <option value="WAS">Washington Wizards</option>
-                    </select>
+        {% if error_message %}
+        <div class="error-message">
+            {{ error_message }}
+        </div>
+        {% endif %}
+
+        {% if stats %}
+        <!-- Player Info and Stats -->
+        <div class="player-info">
+            <div class="player-header">
+                <div class="player-image-details">
+                    <h2 class="player-name">{{ player_name }}</h2>
+                    <p class="season-info">Season Stats {{ selected_season }}</p>
+                    <div class="player-image">
+                        <img src="https://cdn.nba.com/headshots/nba/latest/260x190/{{player_id}}.png"
+                            alt="{{ player_name }}" onerror="this.src='/static/default-player.png'"
+                            class="player-headshot">
+                    </div>
+                    <p class="team-info">{{ player_team }}</p>
                 </div>
-                <button onclick="clearTeamFilter()"
-                    class="bg-blue-700 text-white py-2 px-4 rounded-lg hover:bg-blue-600 mt-8">
-                    Clear Filter
-                </button>
+
+                <div class="player-stats">
+                    <div class="stat-card">
+                        <div class="stat-title">Points</div>
+                        <div class="value">{{ avg_pts }}</div>
+                        <div class="stat-desc">PPG THIS SEASON</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Assists</div>
+                        <div class="value">{{ avg_ast }}</div>
+                        <div class="stat-desc">APG THIS SEASON</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Rebounds</div>
+                        <div class="value">{{ avg_reb }}</div>
+                        <div class="stat-desc">RPG THIS SEASON</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Steals</div>
+                        <div class="value">{{ avg_stl }}</div>
+                        <div class="stat-desc">SPG THIS SEASON</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Blocks</div>
+                        <div class="value">{{ avg_blk }}</div>
+                        <div class="stat-desc">BPG THIS SEASON</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">3 Points</div>
+                        <div class="value">{{ avg_3pts }}</div>
+                        <div class="stat-desc">3PM THIS SEASON</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Turnovers</div>
+                        <div class="value">{{ avg_tov }}</div>
+                        <div class="stat-desc">TOV THIS SEASON</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">Fouls</div>
+                        <div class="value">{{ avg_pf }}</div>
+                        <div class="stat-desc">PF THIS SEASON</div>
+                    </div>
+                </div>
             </div>
         </div>
+
+        <!-- Line Check Form -->
+        <div class="control-panel">
+            <h3>Check Player Performance Lines</h3>
+            <form action="{{ url_for('check_line') }}" method="post" id="line-check-form">
+                <div class="controls">
+                    <select name="stat_type" id="stat_type" required>
+                        <option value="PTS" {% if current_stat_type=='PTS' %}selected{% endif %}>Points</option>
+                        <option value="AST" {% if current_stat_type=='AST' %}selected{% endif %}>Assists</option>
+                        <option value="REB" {% if current_stat_type=='REB' %}selected{% endif %}>Rebounds</option>
+                        <option value="STL" {% if current_stat_type=='STL' %}selected{% endif %}>Steals</option>
+                        <option value="BLK" {% if current_stat_type=='BLK' %}selected{% endif %}>Blocks</option>
+                        <option value="TOV" {% if current_stat_type=='TOV' %}selected{% endif %}>Turnovers</option>
+                        <option value="FG3M" {% if current_stat_type=='FG3M' %}selected{% endif %}>3-pointers Made
+                        </option>
+                        <option value="PF" {% if current_stat_type=='PF' %}selected{% endif %}>Personal Fouls</option>
+                        <option value="DD" {% if current_stat_type=='DD' %}selected{% endif %}>Double-double</option>
+                        <option value="TD" {% if current_stat_type=='TD' %}selected{% endif %}>Triple-double</option>
+                        <option value="PTS_AST" {% if current_stat_type=='PTS_AST' %}selected{% endif %}>Points +
+                            Assists</option>
+                        <option value="PTS_REB" {% if current_stat_type=='PTS_REB' %}selected{% endif %}>Points +
+                            Rebounds</option>
+                        <option value="PTS_AST_REB" {% if current_stat_type=='PTS_AST_REB' %}selected{% endif %}>Points
+                            + Assists + Rebounds</option>
+                    </select>
+
+                    <input type="number" name="stat_value" id="stat_value" step="0.5" value="{{ current_stat_value }}"
+                        placeholder="Enter value" required>
+
+                    <select name="over_under" id="over_under" required>
+                        <option value="over" {% if current_over_under=='over' %}selected{% endif %}>Over</option>
+                        <option value="under" {% if current_over_under=='under' %}selected{% endif %}>Under</option>
+                    </select>
+
+                    <button type="submit">Check Line</button>
+                </div>
+            </form>
+            <div id="line_result" class="line-result" style="display: none;"></div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <h3 class="filter-title">Filter Games</h3>
+            <div class="filter-controls">
+                <select id="team_filter" class="team-filter">
+                    <option value="">All Teams</option>
+                    <option value="ATL">Atlanta Hawks</option>
+                    <option value="BOS">Boston Celtics</option>
+                    <option value="BKN">Brooklyn Nets</option>
+                    <option value="CHA">Charlotte Hornets</option>
+                    <option value="CHI">Chicago Bulls</option>
+                    <option value="CLE">Cleveland Cavaliers</option>
+                    <option value="DAL">Dallas Mavericks</option>
+                    <option value="DEN">Denver Nuggets</option>
+                    <option value="DET">Detroit Pistons</option>
+                    <option value="GSW">Golden State Warriors</option>
+                    <option value="HOU">Houston Rockets</option>
+                    <option value="IND">Indiana Pacers</option>
+                    <option value="LAC">LA Clippers</option>
+                    <option value="LAL">Los Angeles Lakers</option>
+                    <option value="MEM">Memphis Grizzlies</option>
+                    <option value="MIA">Miami Heat</option>
+                    <option value="MIL">Milwaukee Bucks</option>
+                    <option value="MIN">Minnesota Timberwolves</option>
+                    <option value="NOP">New Orleans Pelicans</option>
+                    <option value="NYK">New York Knicks</option>
+                    <option value="OKC">Oklahoma City Thunder</option>
+                    <option value="ORL">Orlando Magic</option>
+                    <option value="PHI">Philadelphia 76ers</option>
+                    <option value="PHX">Phoenix Suns</option>
+                    <option value="POR">Portland Trail Blazers</option>
+                    <option value="SAC">Sacramento Kings</option>
+                    <option value="SAS">San Antonio Spurs</option>
+                    <option value="TOR">Toronto Raptors</option>
+                    <option value="UTA">Utah Jazz</option>
+                    <option value="WAS">Washington Wizards</option>
+                </select>
+                <button type="button" class="clear-filter" onclick="clearFilters()">Clear Filter</button>
+            </div>
+        </div>
+
         <!-- Game Log Table -->
-        {% if stats %}
-        <div class="bg-gray-800 p-6 rounded-lg shadow-md">
-            <h2 class="text-2xl font-bold mb-4 text-gray-100">Game Log</h2>
-            <div class="overflow-x-auto">
-                <table class="min-w-full table-auto">
-                    <thead class="bg-gray-900">
+        <div class="game-log">
+            <h2>Game Log</h2>
+            <div class="table-responsive">
+                <table>
+                    <thead>
                         <tr>
-                            <th class="px-4 py-2 text-gray-100">DATE</th>
-                            <th class="px-4 py-2 text-gray-100">MATCH</th>
-                            <th class="px-4 py-2 text-gray-100">MIN</th>
-                            <th class="px-4 py-2 text-gray-100">PTS</th>
-                            <th class="px-4 py-2 text-gray-100">AST</th>
-                            <th class="px-4 py-2 text-gray-100">REB</th>
-                            <th class="px-4 py-2 text-gray-100">STL</th>
-                            <th class="px-4 py-2 text-gray-100">BLK</th>
-                            <th class="px-4 py-2 text-gray-100">TOV</th>
-                            <th class="px-4 py-2 text-gray-100">3PTS</th>
-                            <th class="px-4 py-2 text-gray-100">PF</th>
-                            <th class="px-4 py-2 text-gray-100">DD</th>
-                            <th class="px-4 py-2 text-gray-100">TD</th>
+                            <th>Date</th>
+                            <th>Match</th>
+                            <th>MIN</th>
+                            <th>PTS</th>
+                            <th>AST</th>
+                            <th>REB</th>
+                            <th>STL</th>
+                            <th>BLK</th>
+                            <th>TOV</th>
+                            <th>3PM</th>
+                            <th>PF</th>
+                            <th>DD</th>
+                            <th>TD</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for game in stats %}
-                        <tr class="hover:bg-gray-700 transition-colors" id="game-row-{{ loop.index }}">
-                            <td class="border px-4 py-2 text-gray-100">{{ game['GAME_DATE'] }}</td>
-                            <td class="border px-4 py-2 text-gray-100">{{ game['MATCHUP'] }}</td>
-                            <td class="border px-4 py-2 text-gray-100">{{ game['MIN'] }}</td>
-                            <td class="border px-4 py-2 text-gray-100">{{ game['PTS'] }}</td>
-                            <td class="border px-4 py-2 text-gray-100">{{ game['AST'] }}</td>
-                            <td class="border px-4 py-2 text-gray-100">{{ game['REB'] }}</td>
-                            <td class="border px-4 py-2 text-gray-100">{{ game['STL'] }}</td>
-                            <td class="border px-4 py-2 text-gray-100">{{ game['BLK'] }}</td>
-                            <td class="border px-4 py-2 text-gray-100">{{ game['TOV'] }}</td>
-                            <td class="border px-4 py-2 text-gray-100">{{ game['FG3M'] }}</td>
-                            <td class="border px-4 py-2 text-gray-100">{{ game['PF'] }}</td>
-                            <td class="border px-4 py-2 text-gray-100">{{ game['DD'] }}</td>
-                            <td class="border px-4 py-2 text-gray-100">{{ game['TD'] }}</td>
+                        <tr class="game-row {% if game.covered %}highlight{% endif %}"
+                            data-team="{{ game['MATCHUP'].split(' ')[0] }}">
+                            <td>{{ game['GAME_DATE'] }}</td>
+                            <td>{{ game['MATCHUP'] }}</td>
+                            <td>{{ game['MIN'] }}</td>
+                            <td>{{ game['PTS'] }}</td>
+                            <td>{{ game['AST'] }}</td>
+                            <td>{{ game['REB'] }}</td>
+                            <td>{{ game['STL'] }}</td>
+                            <td>{{ game['BLK'] }}</td>
+                            <td>{{ game['TOV'] }}</td>
+                            <td>{{ game['FG3M'] }}</td>
+                            <td>{{ game['PF'] }}</td>
+                            <td>{{ game['DD'] }}</td>
+                            <td>{{ game['TD'] }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -246,192 +675,151 @@
             </div>
         </div>
         {% endif %}
+    </div>
 
-        <script>
-            // Add these functions to your existing script section
-            function filterTeam() {
-                const selectedTeam = document.getElementById('team_filter').value;
-                const rows = document.querySelectorAll('tbody tr');
-                let visibleGames = 0;
-
-                rows.forEach(row => {
-                    const matchupCell = row.querySelector('td:nth-child(2)').textContent;
-                    if (!selectedTeam || matchupCell.includes(selectedTeam)) {
-                        row.style.display = '';
-                        visibleGames++;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-
-                // Update stats for filtered games
-                if (selectedTeam) {
-                    updateFilteredStats(rows, selectedTeam);
+    <script>
+        // Funkcja do filtrowania wierszy
+        function filterTableByTeam(selectedTeam) {
+            const rows = document.querySelectorAll('.game-row');
+            console.log('Filtering for team:', selectedTeam); // Debugging
+            rows.forEach(row => {
+                const matchup = row.querySelector('td:nth-child(2)').textContent; // Bierzemy tekst z kolumny MATCHUP
+                console.log('Matchup:', matchup); // Debugging
+                if (!selectedTeam || matchup.includes(selectedTeam)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
                 }
+            });
+        }
+
+        // Funkcja przywracania filtra
+        function restoreFilter() {
+            const currentFilter = document.getElementById('team_filter').value;
+            if (currentFilter) {
+                filterTableByTeam(currentFilter);
             }
+        }
 
-            function clearTeamFilter() {
-                document.getElementById('team_filter').value = '';
-                filterTeam();
-                // Reset stats to original values
-                updateFilteredStats(document.querySelectorAll('tbody tr'), '');
-            }
-
-            function updateFilteredStats(rows, selectedTeam) {
-                if (!rows.length) return;
-
-                let stats = {
-                    games: 0,
-                    pts: 0,
-                    ast: 0,
-                    reb: 0,
-                    stl: 0,
-                    blk: 0,
-                    tov: 0,
-                    fg3m: 0,
-                    pf: 0,
-                    dd: 0,
-                    td: 0
-                };
-
-                rows.forEach(row => {
-                    const matchupCell = row.querySelector('td:nth-child(2)').textContent;
-                    if (!selectedTeam || matchupCell.includes(selectedTeam)) {
-                        stats.games++;
-                        stats.pts += parseFloat(row.querySelector('td:nth-child(4)').textContent) || 0;
-                        stats.ast += parseFloat(row.querySelector('td:nth-child(5)').textContent) || 0;
-                        stats.reb += parseFloat(row.querySelector('td:nth-child(6)').textContent) || 0;
-                        stats.stl += parseFloat(row.querySelector('td:nth-child(7)').textContent) || 0;
-                        stats.blk += parseFloat(row.querySelector('td:nth-child(8)').textContent) || 0;
-                        stats.tov += parseFloat(row.querySelector('td:nth-child(9)').textContent) || 0;
-                        stats.fg3m += parseFloat(row.querySelector('td:nth-child(10)').textContent) || 0;
-                        stats.pf += parseFloat(row.querySelector('td:nth-child(11)').textContent) || 0;
-                        stats.dd += row.querySelector('td:nth-child(12)').textContent === 'YES' ? 1 : 0;
-                        stats.td += row.querySelector('td:nth-child(13)').textContent === 'YES' ? 1 : 0;
-                    }
-                });
-
-                // Update averages display
-                if (stats.games > 0) {
-                    document.querySelector('[id="avg_pts"]').textContent = (stats.pts / stats.games).toFixed(2);
-                    document.querySelector('[id="avg_ast"]').textContent = (stats.ast / stats.games).toFixed(2);
-                    document.querySelector('[id="avg_reb"]').textContent = (stats.reb / stats.games).toFixed(2);
-                    document.querySelector('[id="avg_stl"]').textContent = (stats.stl / stats.games).toFixed(2);
-                    document.querySelector('[id="avg_blk"]').textContent = (stats.blk / stats.games).toFixed(2);
-                    document.querySelector('[id="avg_tov"]').textContent = (stats.tov / stats.games).toFixed(2);
-                    document.querySelector('[id="avg_3pts"]').textContent = (stats.fg3m / stats.games).toFixed(2);
-                    document.querySelector('[id="avg_pf"]').textContent = (stats.pf / stats.games).toFixed(2);
-                }
-            }
-
-            // Add event listener for team filter
-            document.getElementById('team_filter').addEventListener('change', filterTeam);
-
-            function getSuggestions() {
-                const query = document.getElementById('player_name').value;
-                if (query.length < 2) {
-                    document.getElementById('player_name_suggestions').innerHTML = '';
-                    return;
-                }
-
-                fetch(`/autocomplete?query=${query}`)
+        // Autocomplete functionality
+        document.getElementById('player_name').addEventListener('input', function (e) {
+            const query = e.target.value;
+            if (query.length >= 2) {
+                fetch(`/autocomplete?query=${encodeURIComponent(query)}`)
                     .then(response => response.json())
                     .then(data => {
-                        const suggestionsDiv = document.getElementById('player_name_suggestions');
-                        suggestionsDiv.innerHTML = '';
-                        data.forEach(item => {
+                        const suggestions = document.getElementById('player_name_suggestions');
+                        suggestions.innerHTML = '';
+                        data.forEach(name => {
                             const div = document.createElement('div');
-                            div.textContent = item;
+                            div.textContent = name;
                             div.onclick = function () {
-                                document.getElementById('player_name').value = item;
-                                suggestionsDiv.innerHTML = '';
+                                document.getElementById('player_name').value = name;
+                                suggestions.innerHTML = '';
                             };
-                            div.className = 'p-2 hover:bg-gray-700 cursor-pointer';
-                            suggestionsDiv.appendChild(div);
+                            suggestions.appendChild(div);
                         });
                     });
+            } else {
+                document.getElementById('player_name_suggestions').innerHTML = '';
             }
+        });
 
-            function highlightRows(statType, statValue, overUnder) {
-                const rows = document.querySelectorAll('tbody tr');
-
-                rows.forEach(row => {
-                    row.classList.remove('bg-green-600');
-
-                    const cells = row.querySelectorAll('td');
-                    let value;
-
-                    switch (statType) {
-                        case 'PTS': value = parseFloat(cells[3].textContent); break;
-                        case 'AST': value = parseFloat(cells[4].textContent); break;
-                        case 'REB': value = parseFloat(cells[5].textContent); break;
-                        case 'STL': value = parseFloat(cells[6].textContent); break;
-                        case 'BLK': value = parseFloat(cells[7].textContent); break;
-                        case 'TOV': value = parseFloat(cells[8].textContent); break;
-                        case 'FG3M': value = parseFloat(cells[9].textContent); break;
-                        case 'PF': value = parseFloat(cells[10].textContent); break;
-                        case 'DD': value = cells[11].textContent === 'YES' ? 1 : 0; break;
-                        case 'TD': value = cells[12].textContent === 'YES' ? 1 : 0; break;
-                        case 'PTS_AST':
-                            value = parseFloat(cells[3].textContent) + parseFloat(cells[4].textContent);
-                            break;
-                        case 'PTS_REB':
-                            value = parseFloat(cells[3].textContent) + parseFloat(cells[5].textContent);
-                            break;
-                        case 'PTS_AST_REB':
-                            value = parseFloat(cells[3].textContent) + parseFloat(cells[4].textContent) + parseFloat(cells[5].textContent);
-                            break;
-                    }
-
-                    let covered;
-                    if (statType === 'DD' || statType === 'TD') {
-                        covered = overUnder === 'over' ? value === 1 : value === 0;
-                    } else {
-                        covered = overUnder === 'over' ? value > statValue : value < statValue;
-                    }
-
-                    if (covered) {
-                        row.classList.add('bg-green-600');
-                    }
-                });
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('#player_name')) {
+                document.getElementById('player_name_suggestions').innerHTML = '';
             }
+        });
 
-            document.getElementById('line_form').addEventListener('submit', function (event) {
-                event.preventDefault();
+        // Line check form handling
+        document.getElementById('line-check-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            formData.append('player_name', document.getElementById('player_name').value);
+            formData.append('season', document.getElementById('season').value);
 
-                const formData = new FormData(this);
-                const statType = formData.get('stat_type');
-                const statValue = parseFloat(formData.get('stat_value'));
-                const overUnder = formData.get('over_under');
+            // Zachowaj aktualnie wybrany filtr drużyny
+            const currentTeamFilter = document.getElementById('team_filter').value;
 
-                fetch('/check_line', {
-                    method: 'POST',
-                    body: formData
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        const resultDiv = document.getElementById('line_result');
-                        if (data.success) {
-                            resultDiv.textContent = data.message;
-                            resultDiv.style.display = 'block';
-                            resultDiv.className = 'bg-green-900 text-green-100 p-4 rounded mt-4';
-                            highlightRows(statType, statValue, overUnder);
-                        } else {
-                            resultDiv.textContent = data.error || 'An error occurred';
-                            resultDiv.style.display = 'block';
-                            resultDiv.className = 'bg-red-900 text-red-100 p-4 rounded mt-4';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        const resultDiv = document.getElementById('line_result');
-                        resultDiv.textContent = 'An error occurred while processing your request';
+            fetch('/check_line', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    const resultDiv = document.getElementById('line_result');
+                    if (data.success) {
+                        resultDiv.textContent = data.message;
                         resultDiv.style.display = 'block';
-                        resultDiv.className = 'bg-red-900 text-red-100 p-4 rounded mt-4';
-                    });
-            });
-        </script>
-    </div>
+                        resultDiv.classList.remove('error');
+                        resultDiv.classList.add('success');
+
+                        // Aktualizuj tabelę
+                        const tbody = document.querySelector('table tbody');
+                        if (tbody && data.stats) {
+                            tbody.innerHTML = ''; // Wyczyść obecną zawartość
+                            data.stats.forEach(game => {
+                                const row = document.createElement('tr');
+                                if (game.covered) {
+                                    row.classList.add('highlight');
+                                }
+                                row.classList.add('game-row');
+                                row.dataset.matchup = game.MATCHUP; // Dodaj pełny matchup jako data atrybut
+
+                                row.innerHTML = `
+                                <td>${game.GAME_DATE}</td>
+                                <td>${game.MATCHUP}</td>
+                                <td>${game.MIN}</td>
+                                <td>${game.PTS}</td>
+                                <td>${game.AST}</td>
+                                <td>${game.REB}</td>
+                                <td>${game.STL}</td>
+                                <td>${game.BLK}</td>
+                                <td>${game.TOV}</td>
+                                <td>${game.FG3M}</td>
+                                <td>${game.PF}</td>
+                                <td>${game.DD}</td>
+                                <td>${game.TD}</td>
+                            `;
+                                tbody.appendChild(row);
+                            });
+
+                            // Przywróć filtrowanie po aktualizacji tabeli
+                            if (currentTeamFilter) {
+                                filterTableByTeam(currentTeamFilter);
+                            }
+                        }
+                    } else {
+                        resultDiv.textContent = data.error || 'An error occurred';
+                        resultDiv.style.display = 'block';
+                        resultDiv.classList.remove('success');
+                        resultDiv.classList.add('error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    const resultDiv = document.getElementById('line_result');
+                    resultDiv.textContent = 'An error occurred while processing your request';
+                    resultDiv.style.display = 'block';
+                    resultDiv.classList.remove('success');
+                    resultDiv.classList.add('error');
+                });
+        });
+
+        // Team filter functionality
+        document.getElementById('team_filter').addEventListener('change', function (e) {
+            const selectedTeam = e.target.value;
+            filterTableByTeam(selectedTeam);
+        });
+
+        // Clear filters
+        function clearFilters() {
+            document.getElementById('team_filter').value = '';
+            const rows = document.querySelectorAll('.game-row');
+            rows.forEach(row => row.style.display = '');
+        }
+    </script>
 </body>
 
 </html>
